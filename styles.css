@@ -1,0 +1,40 @@
+/* Ocultar flechas en inputs de tipo number */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    outline: none;
+    width: 200px;
+}
+
+.form-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.form-group label {
+    width: 120px;
+}
+
+/* Estilos visuales de validación */
+input:focus {
+    border-color: #0d6efd;
+}
+
+input:user-invalid {
+    border-color: #dc3545;
+    background-color: #f8d7da;
+}
+
+input:user-valid:not(:placeholder-shown) {
+    border-color: #198754;
+}

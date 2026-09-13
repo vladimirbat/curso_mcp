@@ -1,0 +1,12 @@
+{
+  "name": "curso-mcp",
+  "version": "1.0.0",
+  "description": "Calculadora de Descuentos",
+  "main": "app.js",
+  "scripts": {
+    "start": "serve -l 3000"
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
+  }
+}
