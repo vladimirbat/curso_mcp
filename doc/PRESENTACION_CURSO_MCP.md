@@ -20,15 +20,15 @@ header {
 
 - [1. Agenda](#4)
 - [2. Introducción](#5)
-- [3. Consumo de MCPs existentes](#27)
-- [4. Creación de un MCP propio con Node.js](#28)
-- [5. Transportes MCP: stdio vs Streamable HTTP](#52)
-- [6. Seguridad y operación básica](#70)
-- [7. Glosario](#86)
-- [8. Resumen para recordar](#91)
+- [3. Consumo de MCPs existentes](#29)
+- [4. Creación de un MCP propio con Node.js](#30)
+- [5. Transportes MCP: stdio vs Streamable HTTP](#54)
+- [6. Seguridad y operación básica](#72)
+- [7. Glosario](#88)
+- [8. Resumen para recordar](#93)
 
 ---
-- [9. Referencias oficiales](#93)
+- [9. Referencias oficiales](#95)
 
 ---
 
@@ -46,21 +46,38 @@ header {
 # 2. Introducción
 <!-- header: "2. Introducción"-->
 
-- [2.1. Problema que resuelve MCP](#7)
-- [2.2. Arquitectura básica](#10)
-- [2.3. Capas del protocolo MCP](#15)
-- [2.4. Primitivas principales](#18)
-- [2.5. Matriz de decisión rápida](#25)
+- [2.1. Ejemplos de este curso](#6)
+- [2.2. Definición](#7)
+- [2.3. Problema que resuelve MCP](#8)
+- [2.4. Arquitectura básica](#12)
+- [2.5. Capas del protocolo MCP](#17)
+- [2.6. Primitivas principales](#20)
+- [2.7. Matriz de decisión rápida](#27)
 
 ---
+## 2.1. Ejemplos de este curso
+
+Los ejemplos de este curso corresponden a tres repositorios que se pueden clonar con los siguientes comandos:
+
+```bash
+git clone https://github.com/vladimirbat/curso_mcp.git
+git clone https://github.com/vladimirbat/curso_mcp_server.git
+git clone https://github.com/vladimirbat/web_peliculas.git
+```
+
+Se recomienda descargarlos todos en la misma carpeta contenedora y crear un espacio de trabajo de Visual Studio Code que importe las tres carpetas de los proyectos.
+
+---
+
+## 2.2. Definición
 
 Model Context Protocol, o MCP, es un protocolo abierto que permite conectar aplicaciones de IA con datos, herramientas y sistemas externos de forma estandarizada.
 
 
 
 ---
-## 2.1. Problema que resuelve MCP
-<!-- header: "2.1. Problema que resuelve MCP"-->
+## 2.3. Problema que resuelve MCP
+<!-- header: "2.3. Problema que resuelve MCP"-->
 
 - El asistente no tiene acceso directo al contexto real del proyecto.
 - El usuario copia y pega archivos, tickets, documentación o errores manualmente.
@@ -98,14 +115,14 @@ Qué MCP he usado:
 - postgresql
 
 ---
-## 2.2. Arquitectura básica
+## 2.4. Arquitectura básica
 
 MCP sigue una arquitectura cliente-servidor.
 
 ![Arquitectura MCP](./img/arquitectura.svg)
 
 ---
-### 2.2.1. Host
+### 2.4.1. Host
 
 El **host** es la aplicación de IA que usa el usuario. Puede ser un IDE, una aplicación de escritorio, una interfaz de chat o una herramienta de agente. Ejemplos de host:
 
@@ -117,7 +134,7 @@ El **host** es la aplicación de IA que usa el usuario. Puede ser un IDE, una ap
 El host coordina la conversación con el modelo LLM y decide qué servidores MCP están disponibles.
 
 ---
-### 2.2.2. Cliente MCP
+### 2.4.2. Cliente MCP
 
 El **cliente MCP** es el componente que mantiene una conexión con un servidor MCP concreto. Normalmente vive dentro del host.
 
@@ -137,7 +154,7 @@ Responsabilidades habituales del cliente MCP:
 - Solicitar confirmaciones de usuario cuando proceda.
 
 ---
-### 2.2.3. Servidor MCP
+### 2.4.3. Servidor MCP
 
 El **servidor MCP** es el programa o servicio que expone capacidades al cliente. Puede ejecutarse:
 
@@ -147,14 +164,14 @@ El **servidor MCP** es el programa o servicio que expone capacidades al cliente.
 Un servidor MCP no es necesariamente un servidor web. Un servidor local sobre `stdio` puede ser simplemente un proceso Node.js que lee mensajes por `stdin` y responde por `stdout`.
 
 ---
-## 2.3. Capas del protocolo MCP
+## 2.5. Capas del protocolo MCP
 
 MCP puede entenderse en dos capas:
 - Capa de datos.
 - Capa de transporte.
 
 ---
-### 2.3.1. Capa de datos
+### 2.5.1. Capa de datos
 
 Define los mensajes y operaciones basados en JSON-RPC 2.0. Aquí aparecen conceptos como:
 
@@ -168,7 +185,7 @@ Define los mensajes y operaciones basados en JSON-RPC 2.0. Aquí aparecen concep
 - Prompts.
 
 ---
-### 2.3.2. Capa de transporte
+### 2.5.2. Capa de transporte
 
 Define cómo viajan esos mensajes entre cliente y servidor. Los transportes estándar actuales son:
 
@@ -178,8 +195,8 @@ Define cómo viajan esos mensajes entre cliente y servidor. Los transportes est�
 Un servidor MCP no es simplemente una API REST. Puede usar HTTP, pero sus mensajes siguen el modelo JSON-RPC definido por MCP.
 
 ---
-## 2.4. Primitivas principales
-<!-- header: "1.4. Primitivas principales: tools, resources y prompts"-->
+## 2.6. Primitivas principales
+<!-- header: "2.6. Primitivas principales"-->
 
 MCP define varias primitivas. Las más importantes son:
 - Tools.
@@ -187,7 +204,7 @@ MCP define varias primitivas. Las más importantes son:
 - Prompts.
 
 ---
-### 2.4.1. Tools
+### 2.6.1. Tools
 
 Las **tools** son funciones que el modelo puede solicitar ejecutar, normalmente con aprobación o supervisión del usuario.
 
@@ -213,7 +230,7 @@ Características clave:
 - Pueden fallar de forma recuperable usando el atributo  `isError: true`.
 
 ---
-### 2.4.2. Resources
+### 2.6.2. Resources
 
 Los **resources** son datos o documentos que el cliente puede leer para aportar contexto al modelo.
 
@@ -237,7 +254,7 @@ Características clave:
 - Son útiles para documentación, configuración, esquemas, catálogos y archivos.
 
 ---
-### 2.4.3. Prompts
+### 2.6.3. Prompts
 
 Los **prompts** son plantillas reutilizables de mensajes que el servidor pone a disposición del cliente o del usuario.
 
@@ -262,8 +279,8 @@ Características clave:
 - Ayudan a homogeneizar prácticas dentro de un equipo.
 
 ---
-## 2.5. Matriz de decisión rápida
-<!-- header: "2.5. Matriz de decisión rápida"-->
+## 2.7. Matriz de decisión rápida
+<!-- header: "2.7. Matriz de decisión rápida"-->
 
 | Necesidad | Primitiva | Ejemplo |
 |---|---|---|
@@ -290,21 +307,21 @@ Para ver cómo emplear un MCP existente, se va a realizar un ejempolo con el **C
 # 4. Creación de un MCP propio con Node.js
 <!-- header: "4. Creación de un MCP propio con Node.js"-->
 
-- [4.1. Qué vamos a construir](#30)
-- [4.2. Estructura del proyecto](#32)
-- [4.3. Crear el proyecto e instalar dependencias](#33)
-- [4.4. Configurar package.json](#35)
-- [4.5. Conexión con TMDB y credenciales](#36)
-- [4.6. Crear el servidor MCP](#38)
-- [4.7. Registrar tools en el servidor](#40)
+- [4.1. Qué vamos a construir](#32)
+- [4.2. Estructura del proyecto](#34)
+- [4.3. Crear el proyecto e instalar dependencias](#35)
+- [4.4. Configurar package.json](#37)
+- [4.5. Conexión con TMDB y credenciales](#38)
+- [4.6. Crear el servidor MCP](#40)
+- [4.7. Registrar tools en el servidor](#42)
 
 ---
-- [4.8. Anatomía de una tool MCP](#41)
-- [4.9. Manejo de errores y disciplina stdio](#43)
-- [4.10. Probar con MCP Inspector](#45)
-- [4.11. Conectar el servidor en VS Code](#47)
-- [4.12. Buenas prácticas para diseñar tools](#49)
-- [4.13. Práctica de uso del servidor MCP desde otra aplicación](#50)
+- [4.8. Anatomía de una tool MCP](#43)
+- [4.9. Manejo de errores y disciplina stdio](#45)
+- [4.10. Probar con MCP Inspector](#47)
+- [4.11. Conectar el servidor en VS Code](#49)
+- [4.12. Buenas prácticas para diseñar tools](#51)
+- [4.13. Práctica de uso del servidor MCP desde otra aplicación](#52)
 
 ---
 
@@ -584,11 +601,11 @@ Si se quiere probar el MCP sin generar código, simplemente llamandolo desde un 
 # 5. Transportes MCP: stdio vs Streamable HTTP
 <!-- header: "5. Transportes MCP: stdio vs Streamable HTTP"-->
 
-- [5.1. Qué es un transporte](#53)
-- [5.2. stdio](#54)
-- [5.3. Streamable HTTP](#60)
-- [5.4. Comparativa rápida](#66)
-- [5.5. No confundir Streamable HTTP con REST](#68)
+- [5.1. Qué es un transporte](#55)
+- [5.2. stdio](#56)
+- [5.3. Streamable HTTP](#62)
+- [5.4. Comparativa rápida](#68)
+- [5.5. No confundir Streamable HTTP con REST](#70)
 
 ---
 
@@ -753,14 +770,14 @@ La tool o resource define la capacidad funcional.
 # 6. Seguridad y operación básica
 <!-- header: "6. Seguridad y operación básica"-->
 
-- [6.1. Por qué la seguridad importa en MCP](#71)
-- [6.2. Principio de mínimo privilegio](#72)
-- [6.3. Gestión de secretos](#73)
-- [6.4. Logs](#75)
-- [6.5. Límites operativos](#77)
-- [6.6. Aprobación de acciones](#79)
-- [6.7. Checklist de seguridad para una tool MCP](#82)
-- [6.8. Checklist de operación](#84)
+- [6.1. Por qué la seguridad importa en MCP](#73)
+- [6.2. Principio de mínimo privilegio](#74)
+- [6.3. Gestión de secretos](#75)
+- [6.4. Logs](#77)
+- [6.5. Límites operativos](#79)
+- [6.6. Aprobación de acciones](#81)
+- [6.7. Checklist de seguridad para una tool MCP](#84)
+- [6.8. Checklist de operación](#86)
 
 ---
 
