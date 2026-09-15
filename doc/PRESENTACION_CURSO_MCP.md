@@ -21,7 +21,7 @@ header {
 - [1. Agenda](#4)
 - [2. Introducción](#5)
 - [3. Consumo de MCPs existentes](#27)
-- [4. Creación de un MCP propio](#28)
+- [4. Creación de un MCP propio con Node.js](#28)
 - [5. Transportes MCP: stdio vs Streamable HTTP](#51)
 - [6. Seguridad y operación básica](#63)
 - [7. Actividad final: diseñar un MCP para un caso real](#65)
@@ -280,535 +280,295 @@ Características clave:
 Para ver cómo emplear un MCP existente, se va a realizar un ejempolo con el MCP de Chrome DevTools. Los pasos a seguir se pueden ver en el documento [PRESENTACION_CURSO_MCP.md](PRESENTACION_CURSO_MCP.md)
 
 ---
-# 4. Creación de un servidor de MCP
-<!-- header: "4. Creación de un MCP propio con Node.js/TypeScript"-->
+# 4. Creación de un MCP propio con Node.js
+<!-- header: "4. Creación de un MCP propio con Node.js"-->
 
 - [4.1. Qué vamos a construir](#30)
-- [4.2. Estructura del proyecto](#31)
-- [4.3. Crear el proyecto](#32)
-- [4.4. Configurar TypeScript](#33)
-- [4.5. Configurar package.json](#34)
-- [4.6. Implementar el servidor MCP](#35)
-- [4.7. Compilar](#36)
+- [4.2. Estructura del proyecto](#32)
+- [4.3. Crear el proyecto e instalar dependencias](#33)
+- [4.4. Configurar package.json](#35)
+- [4.5. Conexión con TMDB y credenciales](#36)
+- [4.6. Crear el servidor MCP](#38)
+- [4.7. Registrar tools en el servidor](#36)
 
 ---
-- [4.8. Probar con MCP Inspector](#37)
-- [4.9. Conectar el servidor a un cliente MCP local](#38)
-- [4.10. Anatomía de una tool MCP](#39)
-- [4.11. Buenas prácticas para diseñar tools](#45)
-- [4.12. Ejercicios](#46)
+- [4.8. Anatomía de una tool MCP](#41)
+- [4.9. Manejo de errores y disciplina stdio](#43)
+- [4.10. Probar con MCP Inspector](#45)
+- [4.11. Conectar el servidor en VS Code](#39)
+- [4.12. Buenas prácticas para diseñar tools](#49)
+- [4.13. Ejercicios prácticos](#50)
 
 ---
 
 ## 4.1. Qué vamos a construir
 <!-- header: "4.1. Qué vamos a construir"-->
 
-Construiremos un servidor MCP local que expone una tool llamada:
+Construiremos un servidor MCP local en **JavaScript y Node.js** que se conecta a la API de **TMDB** (The Movie Database).
 
-```text
-get_project_status
-```
+Expone dos tools principales:
 
-La tool recibirá:
-
-- `projectId`: identificador del proyecto.
-- `includeRisks`: booleano opcional para incluir riesgos.
-
-Y devolverá:
-
-- Estado del proyecto.
-- Porcentaje de avance.
-- Próximo hito.
-- Riesgos, si se solicitan.
-
-También añadiremos ejemplos opcionales de:
-
-- Un resource con documentación de estándares FrontEnd.
-- Un prompt para revisar historias de usuario.
+1. `get_actor_movies`: busca un actor o actriz y devuelve las películas en las que ha participado.
+2. `get_movie_cast`: busca una película y devuelve su reparto de actores.
 
 ---
+
+El servidor simplifica la interacción para el modelo:
+- Oculta URLs, endpoints REST y autenticación de TMDB.
+- Recibe parámetros sencillos en lenguaje natural.
+- Devuelve datos limpios y estructurados.
+
+---
+
 ## 4.2. Estructura del proyecto
+<!-- header: "4.2. Estructura del proyecto"-->
+
+Un proyecto de servidor MCP sencillo en Node.js organizado por responsabilidades:
 
 ```text
-mcp-course-server/
-  package.json
-  tsconfig.json
-  src/
-    index.ts
+tmdb-mcp-server/
+├── package.json          # Metadatos, dependencias y scripts
+├── .env.example          # Plantilla de variables de entorno
+└── src/
+    ├── index.js          # Servidor MCP, registro de tools e inicio stdio
+    ├── tmdb.js           # Consultas HTTP a la API REST de TMDB
+    └── errors.js         # Tipos de errores personalizados
 ```
 
 ---
-## 4.3. Crear el proyecto
 
-```bash
-mkdir mcp-course-server
-cd mcp-course-server
+## 4.3. Crear el proyecto e instalar dependencias
+<!-- header: "4.3. Crear el proyecto e instalar dependencias"-->
+
+Creamos el directorio e instalamos los paquetes necesarios:
+
+```powershell
+mkdir tmdb-mcp-server
+cd tmdb-mcp-server
 npm init -y
-npm install @modelcontextprotocol/sdk zod@3
-npm install -D typescript @types/node
-mkdir src
+npm install @modelcontextprotocol/server zod
 ```
+---
+Ventajas de este enfoque:
+- **Sin compilador**: ejecutamos JavaScript moderno directamente con Node.js `>=20`.
+- **`@modelcontextprotocol/server`**: SDK oficial para crear servidores MCP y gestionar el transporte `stdio`.
+- **`zod`**: definición y validación de esquemas de entrada para las tools.
 
 ---
-## 4.4. Configurar TypeScript
 
-Crea `tsconfig.json`:
+## 4.4. Configurar package.json
+<!-- header: "4.4. Configurar package.json"-->
+
 
 ```json
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "outDir": "./build",
-    "rootDir": "./src",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
-  },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules"]
-}
-```
-
----
-## 4.5. Configurar package.json
-
-Ajusta `package.json` para trabajar con módulos ES y compilar el proyecto:
-
-```json
-{
-  "type": "module",
+  "name": "tmdb-mcp-server", "version": "1.0.0",
+  "type": "module", "main": "src/index.js",
   "scripts": {
-    "build": "tsc",
-    "start": "node build/index.js",
-    "inspect": "npx -y @modelcontextprotocol/inspector node build/index.js"
+    "start": "node src/index.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "latest",
-    "zod": "^3.23.8"
-  },
-  "devDependencies": {
-    "@types/node": "latest",
-    "typescript": "latest"
+    "@modelcontextprotocol/server": "^2.0.0",
+    "zod": "^4.0.0"
   }
 }
 ```
 
-Nota: si tu `package.json` ya contiene otros campos, conserva los necesarios y añade `type` y `scripts`.
+Al incluir `"type": "module"`, podemos usar `import`/`export` de forma nativa.
 
 ---
-## 4.6. Implementar el servidor MCP
 
-Crea `src/index.ts`:
+## 4.5. Conexión con TMDB y credenciales
+<!-- header: "4.5. Conexión con TMDB y credenciales"-->
 
-```ts
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { z } from "zod";
+En `src/tmdb.js` encapsulamos las llamadas a la API de TMDB:
 
-type ProjectStatus = {
-  projectId: string;
-  name: string;
-  status: "green" | "yellow" | "red";
-  progress: number;
-  nextMilestone: string;
-  risks: string[];
-};
-
-const projects: Record<string, ProjectStatus> = {
-  "web-shop": {
-    projectId: "web-shop",
-    name: "Web Shop FrontEnd",
-    status: "yellow",
-    progress: 68,
-    nextMilestone: "Integración de checkout con pasarela de pagos",
-    risks: [
-      "Dependencia pendiente del equipo de backend",
-      "Faltan pruebas E2E para el flujo de compra"
-    ]
-  },
-  "design-system": {
-    projectId: "design-system",
-    name: "Design System Corporativo",
-    status: "green",
-    progress: 82,
-    nextMilestone: "Publicación de componentes Button, Modal y Tabs",
-    risks: [
-      "Alinear tokens de color con UX antes de la publicación"
-    ]
+- **Lectura de la API Key**: se obtiene de las variables de entorno del proceso:
+  ```javascript
+  function getApiKey() {
+    const apiKey = process.env.TMDB_API_KEY;
+    if (!apiKey) {
+      throw new ConfigurationError("TMDB_API_KEY no está configurada.");
+    }
+    return apiKey;
   }
-};
+  ```
+---  
+  
+- **Peticiones HTTP**: usamos `fetch` nativo de Node.js.
+- **Funciones de negocio exportadas**:
+  - `getActorMovies({ actor, language, limit })`
+  - `getMovieCast({ movie, year, language, limit })`
 
-const server = new McpServer({
-  name: "mcp-course-projects",
-  version: "1.0.0"
-});
+---
 
+## 4.6. Crear el servidor MCP
+<!-- header: "4.6. Crear el servidor MCP"-->
+
+En `src/index.js` inicializamos la instancia de `McpServer`:
+
+```javascript
+import { McpServer } from "@modelcontextprotocol/server";
+import { serveStdio } from "@modelcontextprotocol/server/stdio";
+import * as z from "zod/v4";
+import { getActorMovies, getMovieCast } from "./tmdb.js";
+function createServer() {
+  const server = new McpServer({
+    name: "tmdb-movies",
+    version: "1.0.0"
+  });
+  // Registro de tools...
+  return server;
+}
+serveStdio(createServer);
+```
+---
+`serveStdio` se encarga de escuchar y responder mediante entrada y salida estándar.
+
+---
+
+## 4.7. Registrar tools en el servidor
+<!-- header: "4.7. Registrar tools en el servidor"-->
+
+```javascript
 server.registerTool(
-  "get_project_status",
+  "get_actor_movies",
   {
-    title: "Consultar estado de proyecto",
-    description:
-      "Devuelve un resumen del estado de un proyecto interno a partir de su identificador.",
-    inputSchema: {
-      projectId: z
-        .string()
-        .min(2)
-        .max(30)
-        .describe("Identificador del proyecto. Ejemplos: web-shop, design-system"),
-      includeRisks: z
-        .boolean()
-        .optional()
-        .default(false)
-        .describe("Indica si deben incluirse los riesgos conocidos del proyecto")
-    },
-    outputSchema: {
-      projectId: z.string(),
-      name: z.string(),
-      status: z.string(),
-      progress: z.number(),
-      nextMilestone: z.string(),
-      risks: z.array(z.string()).optional()
-    }
+    title: "Películas de un actor",
+    description: "Busca un actor en TMDB y devuelve sus películas.",
+    inputSchema: z.object({
+      actor: z.string().min(2).describe("Nombre del actor o actriz"),
+      language: z.string().default("es-ES").describe("Idioma de TMDB (ej. es-ES)"),
+      limit: z.number().int().min(1).max(50).default(20).describe("Máximo de películas")
+    })
   },
-  async ({ projectId, includeRisks }) => {
-    console.error(
-      `[get_project_status] projectId=${projectId}, includeRisks=${includeRisks}`
-    );
-
-    const project = projects[projectId];
-
-    if (!project) {
+  async ({ actor, language, limit }) => {
+    try {
+      const result = await getActorMovies({ actor, language, limit });
       return {
-        isError: true,
-        content: [
-          {
-            type: "text",
-            text:
-              `No existe el proyecto '${projectId}'. ` +
-              `Prueba con uno de estos identificadores: ${Object.keys(projects).join(", ")}.`
-          }
-        ]
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+        structuredContent: result
       };
-    }
-
-    const output = {
-      projectId: project.projectId,
-      name: project.name,
-      status: project.status,
-      progress: project.progress,
-      nextMilestone: project.nextMilestone,
-      ...(includeRisks ? { risks: project.risks } : {})
-    };
-
-    const riskText =
-      includeRisks && project.risks.length > 0
-        ? `\nRiesgos:\n- ${project.risks.join("\n- ")}`
-        : "";
-
-    return {
-      content: [
-        {
-          type: "text",
-          text:
-            `Proyecto: ${project.name}\n` +
-            `Estado: ${project.status}\n` +
-            `Avance: ${project.progress}%\n` +
-            `Próximo hito: ${project.nextMilestone}` +
-            riskText
-        }
-      ],
-      structuredContent: output
-    };
-  }
-);
-
-server.registerResource(
-  "frontend-standards",
-  "docs://frontend/standards",
-  {
-    title: "Estándares FrontEnd",
-    description: "Guía breve de convenciones FrontEnd del proyecto",
-    mimeType: "text/markdown"
-  },
-  async (uri) => ({
-    contents: [
-      {
-        uri: uri.href,
-        mimeType: "text/markdown",
-        text: `# Estándares FrontEnd
-
-- Usar TypeScript en modo strict.
-- Mantener componentes pequeños y componibles.
-- Cubrir lógica crítica con tests unitarios.
-- Revisar accesibilidad básica: etiquetas, foco y contraste.
-- Evitar acoplar componentes UI a llamadas HTTP directas.
-`
-      }
-    ]
-  })
-);
-
-server.registerPrompt(
-  "review_user_story",
-  {
-    title: "Revisar historia de usuario",
-    description:
-      "Genera una revisión técnica de una historia de usuario antes de empezar el desarrollo.",
-    argsSchema: {
-      story: z.string().min(20).describe("Historia de usuario completa"),
-      frontendStack: z
-        .string()
-        .optional()
-        .describe("Stack FrontEnd. Ejemplo: React, Angular, Vue")
-    }
-  },
-  ({ story, frontendStack }) => ({
-    messages: [
-      {
-        role: "user",
-        content: {
-          type: "text",
-          text:
-            `Revisa la siguiente historia de usuario desde el punto de vista de desarrollo FrontEnd.\n\n` +
-            `Stack: ${frontendStack ?? "no especificado"}\n\n` +
-            `Historia:\n${story}\n\n` +
-            `Devuelve:\n` +
-            `1. Dudas funcionales.\n` +
-            `2. Riesgos técnicos.\n` +
-            `3. Criterios de aceptación mejorados.\n` +
-            `4. Casos de prueba sugeridos.`
-        }
-      }
-    ]
-  })
-);
-
-const transport = new StdioServerTransport();
-await server.connect(transport);
-```
-
----
-## 4.7. Compilar
-
-```bash
-npm run build
-```
-
-Si hay errores de TypeScript:
-
-- Revisa imports.
-- Revisa versión de TypeScript.
-- Revisa que `type` sea `module`.
-- Revisa que `module` y `moduleResolution` sean compatibles.
-
----
-## 4.8. Probar con MCP Inspector
-
-```bash
-npm run inspect
-```
-
-En MCP Inspector:
-
-1. Comprueba que aparece el servidor.
-2. Abre la sección de tools.
-3. Busca `get_project_status`.
-4. Ejecuta la tool con este input:
-
-```json
-{
-  "projectId": "web-shop",
-  "includeRisks": true
-}
-```
-
-5. Ejecuta una prueba de error:
-
-```json
-{
-  "projectId": "unknown-project",
-  "includeRisks": true
-}
-```
-
-6. Revisa si el error devuelto es útil para que el modelo pueda corregirse.
-
----
-## 4.9. Conectar el servidor a un cliente MCP local
-
-Una configuración genérica para un cliente que soporte servidores locales por `stdio` podría ser:
-
-```json
-{
-  "mcpServers": {
-    "course-projects": {
-      "command": "node",
-      "args": [
-        "/ruta/absoluta/a/mcp-course-server/build/index.js"
-      ],
-      "env": {
-        "NODE_ENV": "production"
-      }
+    } catch (error) {
+      return toolError(error);
     }
   }
-}
+);
 ```
+---
+## 4.8. Anatomía de una tool MCP
+<!-- header: "4.8. Anatomía de una tool MCP"-->
 
-Puntos importantes:
+Una tool bien construida cuenta con cuatro elementos clave:
 
-- Usa una ruta absoluta a `build/index.js`.
-- No incluyas secretos en repositorios.
-- Reinicia el cliente tras cambiar la configuración.
-- Revisa los logs del cliente si el servidor no aparece.
+| Elemento | Propósito en el ejemplo TMDB |
+|---|---|
+| **Nombre** | Identificador único (`get_actor_movies`, `get_movie_cast`) |
+| **Descripción** | Explica al LLM qué hace para que decida cuándo llamarla |
+| **Input Schema (Zod)** | Valida tipos (`z.string()`, `z.number()`), límites (`min`, `max`) y valores por defecto |
+
+---
+| Elemento | Propósito en el ejemplo TMDB |
+|---|---|
+| **Handler y Respuesta** | Devuelve texto legible (`content`), JSON estructurado (`structuredContent`) o error (`isError: true`) |
 
 ---
 
-## 4.10. Anatomía de una tool MCP
-<!-- header: "4.10. Anatomía de una tool MCP"-->
+## 4.9. Manejo de errores y disciplina stdio
+<!-- header: "4.9. Manejo de errores y disciplina stdio"-->
 
-Una tool bien diseñada debe responder a estas preguntas:
+### Errores controlados para el LLM:
 
----
-### 4.10.1. Qué hace
-
-La descripción debe ser clara. El modelo usará esa descripción para decidir cuándo invocar la tool.
-
-Mala descripción:
-
-```text
-Hace cosas de proyecto.
-```
-
-Mejor descripción:
-
-```text
-Devuelve un resumen del estado de un proyecto interno a partir de su identificador.
-```
-
----
-### 4.10.2. Qué datos necesita
-
-Los argumentos deben estar tipados y validados.
-
-Ejemplo:
-
-```ts
-inputSchema: {
-  projectId: z.string().min(2).max(30),
-  includeRisks: z.boolean().optional().default(false)
-}
-```
-
----
-### 4.10.3. Qué devuelve
-
-El resultado puede incluir:
-
-- `content`: contenido visible para el modelo/usuario.
-- `structuredContent`: JSON estructurado para clientes o flujos que lo necesiten.
-- `isError`: marca de error recuperable.
-
----
-### 4.10.4. Qué errores pueden ocurrir
-
-Un error recuperable debe ayudar al modelo a corregirse.
-
-Ejemplo:
-
-```ts
-return {
-  isError: true,
-  content: [
-    {
+```javascript
+function toolError(error) {
+  console.error(error); // Logs de depuración siempre a stderr
+  return {
+    isError: true,
+    content: [{
       type: "text",
-      text: "No existe el proyecto 'x'. Prueba con: web-shop, design-system."
+      text: error instanceof Error ? error.message : "Error desconocido."
+    }]
+  };
+}
+```
+---
+### Regla fundamental de stdio:
+- **`stdout` está reservado** exclusivamente para los mensajes JSON-RPC de MCP.
+- Cualquier `console.log()` corromperá la comunicación con el cliente.
+- Usa **`console.error()`** para cualquier traza o depuración.
+
+---
+
+## 4.10. Probar con MCP Inspector
+<!-- header: "4.10. Probar con MCP Inspector"-->
+
+Podemos probar el servidor interactivamente antes de conectarlo al cliente:
+
+```powershell
+$env:TMDB_API_KEY="TU_API_KEY_DE_TMDB"
+npx -y @modelcontextprotocol/inspector node src/index.js
+```
+---
+En la interfaz web de MCP Inspector:
+
+1. Selecciona la pestaña **Tools** y pulsa **List Tools**.
+2. Comprueba que aparecen `get_actor_movies` y `get_movie_cast`.
+3. Ejecuta `get_actor_movies` con `{"actor": "Tom Hanks", "limit": 5}`.
+4. Verifica que la respuesta contiene las películas y el JSON estructurado.
+5. Prueba un actor inexistente para comprobar el mensaje de error controlado.
+
+---
+
+## 4.11. Conectar el servidor en VS Code
+<!-- header: "4.11. Conectar el servidor en VS Code"-->
+
+Configuramos el servidor en `.vscode/mcp.json`:
+
+```json
+{ "servers": {
+    "tmdb-movies": {
+      "type": "stdio", "command": "node",
+      "args": ["C:\\ws\\curso_mcp_server\\src\\index.js"],
+      "env": {"TMDB_API_KEY": "${input:tmdbApiKey}", "TMDB_LANGUAGE": "es-ES"}
+    }
+  },
+  "inputs": [
+    {
+      "id": "tmdbApiKey", "type": "promptString",
+      "description": "TMDB API Key","password": true
     }
   ]
-};
-```
-
----
-### 4.10.5. Qué permisos necesita
-
-Antes de crear una tool, pregúntate:
-
-- ¿Lee datos sensibles?
-- ¿Escribe en sistemas externos?
-- ¿Puede borrar o modificar información?
-- ¿Debe requerir aprobación humana?
-- ¿Debe limitarse por rol, proyecto o entorno?
-
----
-
-## 4.11. Buenas prácticas para diseñar tools
-<!-- header: "4.11. Buenas prácticas para diseñar tools"-->
-
-| Práctica | Motivo |
-|---|---|
-| Nombres claros y específicos | El modelo decide mejor cuándo usarlas |
-| Schemas estrictos | Reducen llamadas inválidas |
-| Descripciones orientadas a uso | Mejoran la selección automática |
-| Resultados breves y estructurados | Reducen ruido y facilitan procesamiento |
-| Errores accionables | Permiten autocorrección |
-| Idempotencia cuando sea posible | Evita efectos duplicados |
-| Timeouts | Evitan bloqueos |
-| Rate limits | Protegen APIs internas |
-| Auditoría | Permite trazabilidad |
-| Aprobación en acciones sensibles | Reduce riesgo operativo |
-
----
-
-## 4.12. Ejercicios
-<!-- header: "4.12. Ejercicios"-->
-
----
-### 4.12.1. Ejercicio 1. Añadir una tool de listado
-
-Crear una tool llamada:
-
-```text
-list_projects
-```
-
-Debe devolver los proyectos disponibles.
-
-Input recomendado:
-
-```ts
-inputSchema: {
-  onlyWithRisks: z.boolean().optional().default(false)
 }
 ```
+---
+Al iniciar el servidor, VS Code solicita la clave sin guardarla en el repositorio.
 
 ---
-### 4.12.2. Ejercicio 2. Añadir validación de formato
 
-Modificar `projectId` para aceptar solo letras minúsculas, números y guiones.
+## 4.12. Buenas prácticas para diseñar tools
+<!-- header: "4.12. Buenas prácticas para diseñar tools"-->
 
-Pista:
-
-```ts
-z.string().regex(/^[a-z0-9-]+$/)
-```
-
----
-### 4.12.3. Ejercicio 3. Añadir un error de negocio
-
-Si el proyecto está en estado `red`, devolver un mensaje que recomiende revisar riesgos antes de continuar.
+- **Nombres y descripciones claros**: guían al LLM a elegir la herramienta adecuada.
+- **Validación con `.describe()`**: añadir explicaciones en el esquema Zod ayuda al modelo a suministrar los argumentos correctos.
+- **Valores por defecto razonables**: por ejemplo `limit: 20` o `language: "es-ES"` evitan sobrecargar el contexto del modelo.
+- **Secretos fuera del schema**: nunca pidas la API Key como argumento de una tool; configúrala en el entorno del proceso.
+- **Mensajes de error orientativos**: indicar claramente si el actor o la película no se encontraron permite al LLM reformular la consulta.
 
 ---
-### 4.12.4. Ejercicio 4. Añadir una variable de entorno
 
-Añadir una variable:
+## 4.13. Ejercicios prácticos
+<!-- header: "4.13. Ejercicios prácticos"-->
 
-```text
-MCP_COURSE_ALLOW_RISKS=true
-```
+### Ejercicio 1: Probar consultas de filmografía
+Pide al asistente en VS Code:
+> *«¿En qué películas ha actuado Scarlett Johansson? Limita la respuesta a 5 títulos.»*
+Comprueba que el modelo invoca `get_actor_movies` con `limit: 5`.
 
-Si no está activa, la tool no debe devolver riesgos aunque `includeRisks` sea `true`.
+### Ejercicio 2: Desambiguar por año de estreno
+Prueba la tool `get_movie_cast` para películas con el mismo título indicando el año de estreno (ej. *Dune* de 1984 vs 2021).
+
+### Ejercicio 3: Manejo de errores
+Consulta por un actor con nombre ficticio y comprueba cómo el modelo interpreta la respuesta con `isError: true`.
 
 ---
 
