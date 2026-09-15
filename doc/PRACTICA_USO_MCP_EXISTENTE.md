@@ -1,28 +1,55 @@
-# Depuración de una aplicación web con Chrome DevTools MCP y GitHub Copilot en VS Code
+# Depuración aplicaciones con Chrome DevTools MCP
+
+---
+
+## Índice
+
+- [1. Objetivo](#1-objetivo)
+- [2. ¿Qué es Chrome DevTools MCP?](#2-qué-es-chrome-devtools-mcp)
+- [3. Requisitos previos](#3-requisitos-previos)
+- [4. Configurar Chrome DevTools MCP en VS Code](#4-configurar-chrome-devtools-mcp-en-vs-code)
+  - [4.1. Configuración para el proyecto o workspace](#41-configuración-para-el-proyecto-o-workspace)
+  - [4.2. Configuración de `mcp.json`](#42-configuración-de-mcpjson)
+  - [4.3. Comprobar el servidor MCP](#43-comprobar-el-servidor-mcp)
+- [5. Ejecutar la aplicación en local](#5-ejecutar-la-aplicación-en-local)
+- [6. Utilizar Chrome DevTools MCP desde GitHub Copilot](#6-utilizar-chrome-devtools-mcp-desde-github-copilot)
+- [7. Prompt para realizar la depuración](#7-prompt-para-realizar-la-depuración)
+- [8. Flujo esperado de depuración](#8-flujo-esperado-de-depuración)
+  - [8.1. Reproducir el problema](#81-reproducir-el-problema)
+  - [8.2. Inspeccionar la consola](#82-inspeccionar-la-consola)
+  - [8.3. Relacionar el error con el workspace](#83-relacionar-el-error-con-el-workspace)
+  - [8.4. Corregir el código](#84-corregir-el-código)
+- [9. Verificar la solución utilizando Chrome DevTools MCP](#9-verificar-la-solución-utilizando-chrome-devtools-mcp)
+- [10. ¿Qué aporta Chrome DevTools MCP?](#10-qué-aporta-chrome-devtools-mcp)
+- [11. Opcional: utilizar una instancia de Chrome existente](#11-opcional-utilizar-una-instancia-de-chrome-existente)
+- [12. Conclusión](#12-conclusión)
+
+---
 
 ## 1. Objetivo
 
 En este ejemplo vamos a utilizar **GitHub Copilot dentro de Visual
-Studio Code**, ejecutándose localmente, junto con **Chrome DevTools
+Studio Code**, ejecutándose localmente, junto con el MCP **Chrome DevTools
 MCP** para investigar y corregir un bug de una aplicación web que ya
 existe en el workspace.
 
 El objetivo no es que Copilot encuentre el problema únicamente revisando
-el código fuente. Queremos utilizar Chrome DevTools MCP para reproducir
-el error en una instancia real de Chrome, obtener evidencias del
-problema en tiempo de ejecución, corregir el código y volver a utilizar
-el navegador para verificar la solución.
+el código fuente. Queremos utilizar Chrome DevTools MCP para:
+- Reproducir el error en una instancia real de Chrome
+- Obtener evidencias del problema en tiempo de ejecución 
+- Corregir el código. 
+- Volver a utilizar el navegador para verificar la solución.
 
 La arquitectura del ejemplo es:
 
 ``` text
-┌──────────────────────── VS Code ────────────────────────┐
+┌──────────────────────── VS Code ───────────────────────┐
 │                                                        │
-│  Workspace                         GitHub Copilot       │
+│  Proyecto o Workspace              GitHub Copilot      │
 │  ├── código de la aplicación             │             │
 │  └── .vscode/mcp.json                    │ MCP         │
 │                                          ▼             │
-│                                Chrome DevTools MCP      │
+│                                Chrome DevTools MCP     │
 └──────────────────────────────────────────┬─────────────┘
                                            │
                                            ▼
@@ -35,9 +62,8 @@ La arquitectura del ejemplo es:
                                   Aplicación web local
 ```
 
-GitHub Copilot puede leer y modificar los archivos del workspace. Chrome
-DevTools MCP, por su parte, proporciona al agente acceso a un navegador
-Chrome real y a información de Chrome DevTools.
+Mientras que GitHub Copilot puede leer y modificar los archivos del código fuente. Chrome
+DevTools MCP, por su parte, proporciona al agente acceso a un navegador Chrome real en ejecución y la información de sus DevTools.
 
 ## 2. ¿Qué es Chrome DevTools MCP?
 
@@ -100,10 +126,9 @@ No es necesario instalar `chrome-devtools-mcp` globalmente.
 
 ## 4. Configurar Chrome DevTools MCP en VS Code
 
-### 4.1. Configuración a nivel de workspace
+### 4.1. Configuración para el proyecto o workspace
 
-Para este ejemplo configuraremos Chrome DevTools MCP a nivel de
-**workspace**.
+Para este ejemplo se configurará el proyecto para ser **cliente** del MCP **Chrome DevTools MCP** para el **proyecto**.
 
 Crearemos el archivo:
 
@@ -111,11 +136,10 @@ Crearemos el archivo:
 .vscode/mcp.json
 ```
 
-De esta manera, la configuración del servidor MCP forma parte del
-proyecto:
+De esta manera, indicamos al proyecto cómo acceder al servidor MCP:
 
 ``` text
-workspace/
+curso_mcp/
 ├── .vscode/
 │   └── mcp.json
 ├── ...
@@ -168,12 +192,15 @@ chrome-devtools-mcp
 Una vez guardado `.vscode/mcp.json`, VS Code debe detectar el servidor
 `chrome-devtools`.
 
-Desde las funcionalidades MCP de VS Code podemos comprobar que:
+![Sección MCPs de VS Code](./img/ChromeDevToolsMCP_instalado.png)
 
+Desde las funcionalidades MCP de VS Code podemos comprobar que:
 1.  el servidor `chrome-devtools` está configurado;
 2.  el servidor puede iniciarse correctamente;
 3.  las herramientas proporcionadas por el MCP están disponibles para
     GitHub Copilot.
+
+![Sección MCPs de VS Code](./img/ChromeDevToolsMCP_IniciarServidor.png)
 
 La interfaz exacta puede variar según la versión de VS Code, pero el
 objetivo es confirmar que Copilot dispone de las herramientas de Chrome
@@ -218,7 +245,7 @@ agente, asegurándonos de que las herramientas proporcionadas por
 El objetivo es que Copilot pueda combinar dos tipos de capacidades:
 
 ``` text
-Workspace
+Proyecto
    │
    ├── leer código
    └── modificar código
@@ -244,7 +271,7 @@ Podemos utilizar el siguiente prompt como punto de partida.
 > correspondientes a nuestra aplicación.
 
 ``` text
-La aplicación de este workspace está ejecutándose localmente en:
+La aplicación de este proyecto está ejecutándose localmente en:
 
 http://localhost:3000
 
@@ -266,27 +293,24 @@ Realiza los siguientes pasos:
 2. Interactúa con la aplicación para reproducir el problema.
 
    Realiza exactamente las siguientes acciones:
-
-   [INDICAR AQUÍ LOS PASOS PARA REPRODUCIR EL BUG]
+   - Introduce el valor `340` en el campo de entrada «Precio (€)».
+   - Introduce el valor `20` en el campo de entrada «Descuento (%)».
+   - Haz clic en el botón «Calcular».
+   - Se debería mostrar el precio total con el descuento aplicado con el formato: `Precio final: 272 €`.
 
 3. Observa el comportamiento de la aplicación.
 
-4. Utiliza Chrome DevTools MCP para inspeccionar los mensajes y errores
-   de la consola de Chrome y cualquier otra información del navegador
-   que pueda ayudar a diagnosticar el problema.
+4. Utiliza Chrome DevTools MCP para inspeccionar los mensajes y errores de la consola de Chrome y cualquier otra información del navegador que pueda ayudar a diagnosticar el problema.
 
-5. Una vez reproducido el problema y obtenida evidencia mediante
-   Chrome DevTools MCP, analiza el código fuente del workspace.
+5. Una vez reproducido el problema y obtenida evidencia mediante Chrome DevTools MCP, analiza el código fuente del workspace.
 
-6. Relaciona el error observado en Chrome con el código fuente e
-   identifica su causa.
+6. Relaciona el error observado en Chrome con el código fuente e identifica su causa.
 
 7. Modifica únicamente el código necesario para corregir el problema.
 
 8. Utiliza nuevamente Chrome DevTools MCP para recargar la aplicación.
 
-9. Repite exactamente las mismas acciones utilizadas anteriormente
-   para reproducir el problema.
+9. Repite exactamente las mismas acciones utilizadas anteriormente para reproducir el problema.
 
 10. Comprueba mediante Chrome DevTools MCP que:
 
@@ -380,7 +404,7 @@ En este momento el agente dispone de dos fuentes de información:
 Chrome
    └── evidencia del error en ejecución
 
-Workspace
+Proyecto
    └── código que provoca ese comportamiento
 ```
 
@@ -448,7 +472,7 @@ Sin Chrome DevTools MCP podríamos pedir simplemente:
 Revisa el código de este proyecto y corrige el bug.
 ```
 
-En ese escenario Copilot realizaría principalmente un análisis estático:
+En el escenario sin Chrome DevTools MCP, Copilot realizaría principalmente un análisis estático:
 
 ``` text
 Código

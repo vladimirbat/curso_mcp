@@ -11,88 +11,62 @@ header {
 }
 </style>
 
-
-# Context Protocol (MCP) para desarrolladores JavaScript/Node.js
+# Context Protocol (MCP)
 <!-- paginate: skip -->
+---
+<!-- _paginate: skip -->
+# Índice
+
+
+- [1. Agenda](#4)
+- [2. Introducción](#5)
+- [3. Consumo de MCPs existentes](#27)
+- [4. Creación de un MCP propio](#28)
+- [5. Transportes MCP: stdio vs Streamable HTTP](#51)
+- [6. Seguridad y operación básica](#63)
+- [7. Actividad final: diseñar un MCP para un caso real](#65)
+- [8. Glosario](#66)
 
 ---
-<!-- paginate: true -->
-## 1. Introducción
-<!-- header: "1. Introducción"-->
-
-- Model Context Protocol, o MCP, es un protocolo abierto que permite conectar aplicaciones de IA con datos, herramientas y sistemas externos de forma estandarizada. 
-- En vez de copiar manualmente grandes bloques de contexto en un chat o crear integraciones ad hoc para cada asistente, MCP define una manera común de exponer capacidades a clientes compatibles.
-
---- 
-
-- En desarrollo de software, MCP permite extender la asistencia de IA a distintas fases del ciclo de vida: análisis de requisitos, consulta de documentación, acceso a diseños UX, revisión de código, generación de pruebas, interacción con repositorios, consulta de tickets y automatización de tareas internas.
-
-
----
-
-## 2. Objetivos
-<!-- header: "2. Objetivos"-->
-
-- Dónde encaja MCP dentro del stack de IA para desarrollo.
-- Qué son un host, un cliente MCP y un servidor MCP.
-- Cuándo usar `tools`, `resources` y `prompts`.
-- Cómo configurar y probar un MCP local.
-- Cómo usar MCP Inspector para inspección y depuración.
-- Cómo implementar una `tool` con TypeScript/Node.js.
-- Qué diferencias hay entre los transportes `stdio` y `Streamable HTTP`.
-- Qué criterios básicos de seguridad, validación y operación hay que aplicar antes de integrar MCP en flujos reales.
+- [9. Resumen para recordar](#67)
+- [10. Referencias oficiales](#68)
+- [11. Anexo A. Plantilla para diseñar una tool MCP](#69)
+- [12. Anexo B. Plantilla de configuración local](#71)
+- [13. Anexo C. Comandos útiles](#72)
+- [14. Anexo D. Preguntas de autoevaluación](#73)
+- [15. Anexo E. Soluciones orientativas de autoevaluación](#74)
 
 ---
 
-## 3. Contenidos
-<!-- header: "3. Contenidos"-->
-
-1. **Dónde encaja MCP en el stack de IA para desarrollo**  
-   Host, cliente, servidor MCP, tools, resources y prompts.
-
-2. **Consumo de MCPs existentes**  
-   Configuración, permisos, ejemplos habituales y prueba con MCP Inspector.
-
-3. **Creación de un MCP propio con Node.js/TypeScript**  
-   Declaración de servidor, tool, schema de entrada, validación, respuesta, errores y logs.
-
----
-
-4. **Transportes MCP: stdio vs Streamable HTTP**  
-   Cuándo usar cada uno, implicaciones de despliegue, autenticación y debugging.
-
-5. **Seguridad y operación básica**  
-   Secretos, permisos, logs, límites y aprobación de acciones.
-
----
-
-## 4. Agenda
-
-<!-- header: "4. Agenda"-->
+## 1. Agenda
+<!-- header: "1. Agenda"-->
 
 | Bloque | Duración | Contenido |
 |---|---|---|
 | 1 | 30 min | Introducción y ejemplo de uso de un MCP|
-| 3 | 90 min | Creación de un MCP propio con Node.js/TypeScript |
+| 3 | 90 min | Creación de un MCP propio con Node.js |
 
 ---
 
-## 5. Requisitos previos
-<!-- header: "5. Requisitos previos"-->
+<!-- paginate: true -->
+# 2. Introducción
+<!-- header: "2. Introducción"-->
 
-- JavaScript moderno.
-- Experiencia con Node.js y npm.
-- Conocimientos básicos de TypeScript.
-- Familiaridad con JSON.
-- Un editor de código, por ejemplo Visual Studio Code.
+- [2.1. Problema que resuelve MCP](#7)
+- [2.2. Arquitectura básica](#10)
+- [2.3. Capas del protocolo MCP](#15)
+- [2.4. Primitivas principales](#18)
+- [2.5. Matriz de decisión rápida](#25)
 
 ---
 
-# 6. Dónde encaja MCP en el stack de IA para desarrollo
+Model Context Protocol, o MCP, es un protocolo abierto que permite conectar aplicaciones de IA con datos, herramientas y sistemas externos de forma estandarizada.
 
-## 1.1. Problema que resuelve MCP
 
-Cuando usamos IA para desarrollo, aparecen problemas frecuentes:
+
+---
+## 2.1. Problema que resuelve MCP
+<!-- header: "2.1. Problema que resuelve MCP"-->
 
 - El asistente no tiene acceso directo al contexto real del proyecto.
 - El usuario copia y pega archivos, tickets, documentación o errores manualmente.
@@ -100,54 +74,51 @@ Cuando usamos IA para desarrollo, aparecen problemas frecuentes:
 - El modelo puede necesitar muchas iteraciones para obtener información suficiente.
 - No siempre queda claro qué acciones ha ejecutado la IA y con qué permisos.
 
-MCP busca resolver estos problemas mediante un protocolo común para conectar aplicaciones de IA con herramientas y fuentes de contexto externas.
+---
 
-Ejemplos de contexto o herramientas que podrían exponerse mediante MCP:
+MCP busca resolver estos problemas mediante un protocolo común para conectar aplicaciones de IA con herramientas y fuentes de contexto externas. 
+
+---
+
+Ejemplos de posibles MCP:
 
 - Archivos de un proyecto.
 - Documentación interna.
 - Tickets de Jira, GitHub Issues o GitLab Issues.
 - Repositorios de código.
-- Bases de datos.
 - Diseños de Figma.
 - Sistemas de CI/CD.
-- APIs internas.
+- APIs internas y bases de datos.
 - Generadores de pruebas.
 - Catálogos de componentes UI.
 
-## 1.2. Arquitectura básica
+---
+## 2.2. Arquitectura básica
 
 MCP sigue una arquitectura cliente-servidor.
 
-```mermaid
-flowchart LR
-    Usuario[Usuario] --> Host[Host de IA]
-    Host --> ClientA[Cliente MCP A]
-    Host --> ClientB[Cliente MCP B]
-    ClientA --> ServerA[Servidor MCP: filesystem]
-    ClientB --> ServerB[Servidor MCP: tickets]
-    ServerA --> Files[Archivos locales]
-    ServerB --> API[API externa]
-```
+![Arquitectura MCP](./img/arquitectura.svg)
 
-### Host
+---
+### 2.2.1. Host
 
-El **host** es la aplicación de IA que usa el usuario. Puede ser un IDE, una aplicación de escritorio, una interfaz de chat o una herramienta de agente.
-
-Ejemplos de host:
+El **host** es la aplicación de IA que usa el usuario. Puede ser un IDE, una aplicación de escritorio, una interfaz de chat o una herramienta de agente. Ejemplos de host:
 
 - Un IDE con capacidades de IA.
 - Claude Desktop.
 - Un cliente personalizado creado por una empresa.
 - Una herramienta interna de automatización con LLM.
 
-El host coordina la conversación con el modelo y decide qué servidores MCP están disponibles.
+El host coordina la conversación con el modelo LLM y decide qué servidores MCP están disponibles.
 
-### Cliente MCP
+---
+### 2.2.2. Cliente MCP
 
 El **cliente MCP** es el componente que mantiene una conexión con un servidor MCP concreto. Normalmente vive dentro del host.
 
 Si un host se conecta a tres servidores MCP, normalmente tendrá tres clientes MCP, uno por servidor.
+
+---
 
 Responsabilidades habituales del cliente MCP:
 
@@ -158,24 +129,27 @@ Responsabilidades habituales del cliente MCP:
 - Leer resources.
 - Recuperar prompts.
 - Gestionar errores y logs.
-- Aplicar confirmaciones de usuario cuando proceda.
+- Solicitar confirmaciones de usuario cuando proceda.
 
-### Servidor MCP
+---
+### 2.2.3. Servidor MCP
 
-El **servidor MCP** es el programa o servicio que expone capacidades al cliente.
-
-Puede ejecutarse:
+El **servidor MCP** es el programa o servicio que expone capacidades al cliente. Puede ejecutarse:
 
 - Localmente, como un proceso iniciado por el cliente.
 - Remotamente, como un servicio HTTP desplegado en una infraestructura compartida.
 
 Un servidor MCP no es necesariamente un servidor web. Un servidor local sobre `stdio` puede ser simplemente un proceso Node.js que lee mensajes por `stdin` y responde por `stdout`.
 
-## 1.3. Capas del protocolo
+---
+## 2.3. Capas del protocolo MCP
 
 MCP puede entenderse en dos capas:
+- Capa de datos.
+- Capa de transporte.
 
-### Capa de datos
+---
+### 2.3.1. Capa de datos
 
 Define los mensajes y operaciones basados en JSON-RPC 2.0. Aquí aparecen conceptos como:
 
@@ -188,22 +162,27 @@ Define los mensajes y operaciones basados en JSON-RPC 2.0. Aquí aparecen concep
 - Resources.
 - Prompts.
 
-### Capa de transporte
+---
+### 2.3.2. Capa de transporte
 
 Define cómo viajan esos mensajes entre cliente y servidor. Los transportes estándar actuales son:
 
 - `stdio`.
 - `Streamable HTTP`.
 
-Esto es importante: MCP no es simplemente una API REST. Puede usar HTTP, pero sus mensajes siguen el modelo JSON-RPC definido por MCP.
+Un servidor MCP no es simplemente una API REST. Puede usar HTTP, pero sus mensajes siguen el modelo JSON-RPC definido por MCP.
 
 ---
+## 2.4. Primitivas principales
+<!-- header: "1.4. Primitivas principales: tools, resources y prompts"-->
 
-## 1.4. Primitivas principales: tools, resources y prompts
+MCP define varias primitivas. Las más importantes son:
+- Tools.
+- Resources.
+- Prompts.
 
-MCP define varias primitivas. En este curso nos centraremos en las tres más importantes para empezar.
-
-### Tools
+---
+### 2.4.1. Tools
 
 Las **tools** son funciones que el modelo puede solicitar ejecutar, normalmente con aprobación o supervisión del usuario.
 
@@ -217,17 +196,19 @@ run_unit_tests(packageName)
 query_database(sql)
 ```
 
-Usa una tool cuando haya una acción, cálculo, búsqueda o interacción con un sistema externo.
+Se llamará a una tool para que el MCP realice acciones, cálculos, búsquedas o interacciones con sistemas externos.
 
+---
 Características clave:
 
 - Tienen nombre único.
 - Tienen descripción.
 - Declaran un schema de entrada.
 - Pueden devolver texto, contenido estructurado, imágenes, audio o referencias a resources.
-- Pueden fallar de forma recuperable usando `isError: true`.
+- Pueden fallar de forma recuperable usando el atributo  `isError: true`.
 
-### Resources
+---
+### 2.4.2. Resources
 
 Los **resources** son datos o documentos que el cliente puede leer para aportar contexto al modelo.
 
@@ -242,6 +223,7 @@ figma://component/Button
 
 Usa un resource cuando quieras exponer información consultable sin que su lectura implique una acción pesada o peligrosa.
 
+---
 Características clave:
 
 - Se identifican mediante una URI.
@@ -249,7 +231,8 @@ Características clave:
 - Pueden estar parametrizados mediante plantillas de URI.
 - Son útiles para documentación, configuración, esquemas, catálogos y archivos.
 
-### Prompts
+---
+### 2.4.3. Prompts
 
 Los **prompts** son plantillas reutilizables de mensajes que el servidor pone a disposición del cliente o del usuario.
 
@@ -264,6 +247,8 @@ create_accessibility_report(componentName)
 
 Usa un prompt cuando quieras estandarizar una interacción con el modelo.
 
+---
+
 Características clave:
 
 - Son normalmente seleccionados por el usuario.
@@ -272,211 +257,51 @@ Características clave:
 - Ayudan a homogeneizar prácticas dentro de un equipo.
 
 ---
+## 2.5. Matriz de decisión rápida
+<!-- header: "2.5. Matriz de decisión rápida"-->
 
-## 1.5. Matriz de decisión rápida
-
-| Necesidad | Primitiva recomendada | Ejemplo |
+| Necesidad | Primitiva | Ejemplo |
 |---|---|---|
-| Ejecutar una acción | Tool | Crear una rama, consultar una API, lanzar tests |
-| Leer contexto | Resource | README, schema de base de datos, documentación UX |
-| Estandarizar una instrucción | Prompt | Revisión de código, generación de plan de pruebas |
+| Ejecutar una acción | Tool | Crear rama, consultar API, lanzar tests |
+| Leer contexto | Resource | README, schema de DB, documentación UX |
+| Estandarizar una instrucción | Prompt | Revisión de código, plan de pruebas |
 | Devolver un resultado grande | Resource o resource_link | Resultado de análisis, archivo generado |
+
+--- 
+
+| Necesidad | Primitiva | Ejemplo |
+|---|---|---|
 | Pedir confirmación antes de modificar algo | Tool con aprobación del cliente | Borrar archivo, crear issue, desplegar |
 
 ---
+# 3. Consumo de MCPs existentes
+<!-- header: "3. Consumo de MCPs existentes"-->
 
-## 1.6. Ejemplos en el ciclo de desarrollo
+Para ver cómo emplear un MCP existente, se va a realizar un ejempolo con el MCP de Chrome DevTools. Los pasos a seguir se pueden ver en el documento [PRESENTACION_CURSO_MCP.md](PRESENTACION_CURSO_MCP.md)
 
-### Análisis de requisitos
+---
+# 4. Creación de un servidor de MCP
+<!-- header: "4. Creación de un MCP propio con Node.js/TypeScript"-->
 
-- Consultar tickets activos.
-- Extraer criterios de aceptación.
-- Generar preguntas para Product Owner.
-- Relacionar historias con documentación funcional.
+- [4.1. Qué vamos a construir](#30)
+- [4.2. Estructura del proyecto](#31)
+- [4.3. Crear el proyecto](#32)
+- [4.4. Configurar TypeScript](#33)
+- [4.5. Configurar package.json](#34)
+- [4.6. Implementar el servidor MCP](#35)
+- [4.7. Compilar](#36)
 
-### Diseño UX/UI
-
-- Consultar componentes de diseño.
-- Acceder a tokens de diseño.
-- Comparar una historia de usuario con pantallas existentes.
-- Generar checklist de accesibilidad.
-
-### Desarrollo
-
-- Consultar documentación interna.
-- Localizar componentes existentes.
-- Revisar convenciones de código.
-- Generar scaffolding.
-- Consultar dependencias o scripts del proyecto.
-
-### Testing
-
-- Generar casos de prueba.
-- Ejecutar tests unitarios o funcionales.
-- Consultar reportes de cobertura.
-- Resumir fallos de CI.
-
-### Operación
-
-- Consultar logs.
-- Revisar incidencias.
-- Generar resúmenes postmortem.
-- Automatizar tareas repetitivas con control humano.
+---
+- [4.8. Probar con MCP Inspector](#37)
+- [4.9. Conectar el servidor a un cliente MCP local](#38)
+- [4.10. Anatomía de una tool MCP](#39)
+- [4.11. Buenas prácticas para diseñar tools](#45)
+- [4.12. Ejercicios](#46)
 
 ---
 
-# Bloque 2. Consumo de MCPs existentes
----
-
-## 2.1. Qué significa consumir un MCP existente
-
-Consumir un MCP existente significa conectar un host compatible con MCP a un servidor ya implementado.
-
-El flujo habitual es:
-
-1. Elegir un servidor MCP.
-2. Revisar qué permisos necesita.
-3. Añadirlo a la configuración del cliente/host.
-4. Arrancar o reiniciar el host.
-5. Inspeccionar qué tools, resources o prompts expone.
-6. Probar una operación sencilla.
-7. Revisar logs y errores.
-
-## 2.2. Ejemplos habituales de servidores MCP
-
-Categorías frecuentes:
-
-- **Filesystem:** lectura y escritura controlada de carpetas locales.
-- **Git/GitHub/GitLab:** consulta de issues, pull requests, ramas o commits.
-- **Base de datos:** consulta de esquemas o ejecución controlada de queries.
-- **Documentación:** Confluence, Notion, documentación interna o Markdown local.
-- **Diseño:** Figma u otras herramientas UX.
-- **Navegador:** automatización o extracción controlada de páginas.
-- **Testing:** lanzamiento de tests, consulta de reportes o generación de planes.
-- **Herramientas internas:** APIs específicas del cliente o del proyecto.
-
----
-
-## 2.3. Configuración típica de un servidor local
-
-Los servidores locales se suelen configuran mediante JSON:
-
-```json
-{
-  "mcpServers": {
-    "filesystem": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-filesystem",
-        "/ruta/absoluta/a/carpeta-permitida"
-      ]
-    }
-  }
-}
-```
-
-Lectura del ejemplo:
-
-- `filesystem`: nombre lógico del servidor dentro del host.
-- `command`: comando que ejecutará el servidor.
-- `args`: argumentos que se pasan al comando.
-- `@modelcontextprotocol/server-filesystem`: paquete npm del servidor.
-- `/ruta/absoluta/a/carpeta-permitida`: carpeta a la que se da acceso.
-
-Regla práctica: usa rutas absolutas, no relativas.
-
-## 2.4. Laboratorio 1: probar un servidor filesystem con MCP Inspector
-
-> Objetivo: inspeccionar un servidor MCP existente sin depender de un cliente final concreto.
-
-### Paso 1. Crear una carpeta segura para pruebas
-
-macOS/Linux:
-
-```bash
-mkdir -p ~/mcp-course-sandbox
-echo "Hola MCP" > ~/mcp-course-sandbox/nota.txt
-```
-
-Windows PowerShell:
-
-```powershell
-mkdir $HOME\mcp-course-sandbox
-"Hola MCP" | Out-File $HOME\mcp-course-sandbox\nota.txt
-```
-
-No uses como carpeta permitida tu directorio completo de usuario, la raíz del sistema ni carpetas con información sensible.
-
-### Paso 2. Ejecutar el servidor con MCP Inspector
-
-macOS/Linux:
-
-```bash
-npx -y @modelcontextprotocol/inspector npx -y @modelcontextprotocol/server-filesystem ~/mcp-course-sandbox
-```
-
-Windows PowerShell:
-
-```powershell
-npx -y @modelcontextprotocol/inspector npx -y @modelcontextprotocol/server-filesystem $HOME\mcp-course-sandbox
-```
-
-### Paso 3. Inspeccionar capacidades
-
-En MCP Inspector revisa:
-
-- Tools disponibles.
-- Descripciones de cada tool.
-- Schemas de entrada.
-- Resources disponibles, si existen.
-- Logs y errores.
-- Resultado de invocar una tool sencilla.
-
-### Paso 4. Ejecutar una prueba segura
-
-Ejemplos de acciones adecuadas para una carpeta sandbox:
-
-- Listar archivos.
-- Leer `nota.txt`.
-- Crear un archivo temporal.
-- Renombrar un archivo temporal.
-
-Evita probar acciones destructivas fuera de una carpeta de práctica.
-
-## 2.5. Permisos y aprobaciones
-
-Aunque un servidor MCP exponga una tool, el host o cliente puede pedir aprobación al usuario antes de ejecutarla. Esto es especialmente importante en tools que:
-
-- Leen archivos.
-- Modifican archivos.
-- Escriben en sistemas externos.
-- Ejecutan comandos.
-- Consultan datos sensibles.
-- Hacen cambios en tickets, repositorios o despliegues.
-
-La aprobación humana no sustituye al diseño seguro del servidor. Deben aplicarse ambas capas:
-
-1. El servidor limita lo que puede hacer.
-2. El cliente muestra y solicita confirmación cuando la acción es sensible.
-
-## 2.6. Errores habituales al consumir MCPs existentes
-
-| Error | Síntoma | Solución |
-|---|---|---|
-| Ruta relativa | El servidor no encuentra archivos | Usar ruta absoluta |
-| Falta Node.js/npm | `npx` no existe o falla | Instalar Node.js LTS |
-| Permisos insuficientes | La tool falla al leer/escribir | Revisar permisos del sistema operativo |
-| Configuración JSON inválida | El servidor no aparece | Validar JSON |
-| Variables de entorno ausentes | Falla la autenticación | Añadir `env` en la configuración |
-| Logs en stdout | El protocolo se rompe | Usar stderr para logs en stdio |
-| Carpeta demasiado amplia | Riesgo de exposición de datos | Limitar a carpeta sandbox o de proyecto |
-
----
-
-# Bloque 3. Creación de un MCP propio con Node.js/TypeScript
-
-## 3.1. Qué vamos a construir
+## 4.1. Qué vamos a construir
+<!-- header: "4.1. Qué vamos a construir"-->
 
 Construiremos un servidor MCP local que expone una tool llamada:
 
@@ -501,7 +326,8 @@ También añadiremos ejemplos opcionales de:
 - Un resource con documentación de estándares FrontEnd.
 - Un prompt para revisar historias de usuario.
 
-## 3.2. Estructura del proyecto
+---
+## 4.2. Estructura del proyecto
 
 ```text
 mcp-course-server/
@@ -511,7 +337,8 @@ mcp-course-server/
     index.ts
 ```
 
-## 3.3. Crear el proyecto
+---
+## 4.3. Crear el proyecto
 
 ```bash
 mkdir mcp-course-server
@@ -522,7 +349,8 @@ npm install -D typescript @types/node
 mkdir src
 ```
 
-## 3.4. Configurar TypeScript
+---
+## 4.4. Configurar TypeScript
 
 Crea `tsconfig.json`:
 
@@ -544,7 +372,8 @@ Crea `tsconfig.json`:
 }
 ```
 
-## 3.5. Configurar package.json
+---
+## 4.5. Configurar package.json
 
 Ajusta `package.json` para trabajar con módulos ES y compilar el proyecto:
 
@@ -569,7 +398,8 @@ Ajusta `package.json` para trabajar con módulos ES y compilar el proyecto:
 
 Nota: si tu `package.json` ya contiene otros campos, conserva los necesarios y añade `type` y `scripts`.
 
-## 3.6. Implementar el servidor MCP
+---
+## 4.6. Implementar el servidor MCP
 
 Crea `src/index.ts`:
 
@@ -760,7 +590,8 @@ const transport = new StdioServerTransport();
 await server.connect(transport);
 ```
 
-## 3.7. Compilar
+---
+## 4.7. Compilar
 
 ```bash
 npm run build
@@ -773,7 +604,8 @@ Si hay errores de TypeScript:
 - Revisa que `type` sea `module`.
 - Revisa que `module` y `moduleResolution` sean compatibles.
 
-## 3.8. Probar con MCP Inspector
+---
+## 4.8. Probar con MCP Inspector
 
 ```bash
 npm run inspect
@@ -804,7 +636,8 @@ En MCP Inspector:
 
 6. Revisa si el error devuelto es útil para que el modelo pueda corregirse.
 
-## 3.9. Conectar el servidor a un cliente MCP local
+---
+## 4.9. Conectar el servidor a un cliente MCP local
 
 Una configuración genérica para un cliente que soporte servidores locales por `stdio` podría ser:
 
@@ -833,11 +666,13 @@ Puntos importantes:
 
 ---
 
-## 3.10. Anatomía de una tool MCP
+## 4.10. Anatomía de una tool MCP
+<!-- header: "4.10. Anatomía de una tool MCP"-->
 
 Una tool bien diseñada debe responder a estas preguntas:
 
-### 1. Qué hace
+---
+### 4.10.1. Qué hace
 
 La descripción debe ser clara. El modelo usará esa descripción para decidir cuándo invocar la tool.
 
@@ -853,7 +688,8 @@ Mejor descripción:
 Devuelve un resumen del estado de un proyecto interno a partir de su identificador.
 ```
 
-### 2. Qué datos necesita
+---
+### 4.10.2. Qué datos necesita
 
 Los argumentos deben estar tipados y validados.
 
@@ -866,7 +702,8 @@ inputSchema: {
 }
 ```
 
-### 3. Qué devuelve
+---
+### 4.10.3. Qué devuelve
 
 El resultado puede incluir:
 
@@ -874,7 +711,8 @@ El resultado puede incluir:
 - `structuredContent`: JSON estructurado para clientes o flujos que lo necesiten.
 - `isError`: marca de error recuperable.
 
-### 4. Qué errores pueden ocurrir
+---
+### 4.10.4. Qué errores pueden ocurrir
 
 Un error recuperable debe ayudar al modelo a corregirse.
 
@@ -892,7 +730,8 @@ return {
 };
 ```
 
-### 5. Qué permisos necesita
+---
+### 4.10.5. Qué permisos necesita
 
 Antes de crear una tool, pregúntate:
 
@@ -904,7 +743,8 @@ Antes de crear una tool, pregúntate:
 
 ---
 
-## 3.11. Buenas prácticas para diseñar tools
+## 4.11. Buenas prácticas para diseñar tools
+<!-- header: "4.11. Buenas prácticas para diseñar tools"-->
 
 | Práctica | Motivo |
 |---|---|
@@ -921,9 +761,11 @@ Antes de crear una tool, pregúntate:
 
 ---
 
-## 3.12. Ejercicios del bloque 3
+## 4.12. Ejercicios
+<!-- header: "4.12. Ejercicios"-->
 
-### Ejercicio 1. Añadir una tool de listado
+---
+### 4.12.1. Ejercicio 1. Añadir una tool de listado
 
 Crear una tool llamada:
 
@@ -941,7 +783,8 @@ inputSchema: {
 }
 ```
 
-### Ejercicio 2. Añadir validación de formato
+---
+### 4.12.2. Ejercicio 2. Añadir validación de formato
 
 Modificar `projectId` para aceptar solo letras minúsculas, números y guiones.
 
@@ -951,11 +794,13 @@ Pista:
 z.string().regex(/^[a-z0-9-]+$/)
 ```
 
-### Ejercicio 3. Añadir un error de negocio
+---
+### 4.12.3. Ejercicio 3. Añadir un error de negocio
 
 Si el proyecto está en estado `red`, devolver un mensaje que recomiende revisar riesgos antes de continuar.
 
-### Ejercicio 4. Añadir una variable de entorno
+---
+### 4.12.4. Ejercicio 4. Añadir una variable de entorno
 
 Añadir una variable:
 
@@ -967,9 +812,19 @@ Si no está activa, la tool no debe devolver riesgos aunque `includeRisks` sea `
 
 ---
 
-# Bloque 4. Transportes MCP: stdio vs Streamable HTTP
+# 5. Transportes MCP: stdio vs Streamable HTTP
+<!-- header: "5. Transportes MCP: stdio vs Streamable HTTP"-->
 
-## 4.1. Qué es un transporte
+- [5.1. Qué es un transporte](#52)
+- [5.2. stdio](#53)
+- [5.3. Streamable HTTP](#57)
+- [5.4. Comparativa rápida](#61)
+- [5.5. No confundir Streamable HTTP con REST](#62)
+
+---
+
+## 5.1. Qué es un transporte
+<!-- header: "5.1. Qué es un transporte"-->
 
 El transporte es el mecanismo por el que viajan los mensajes MCP entre cliente y servidor.
 
@@ -980,7 +835,8 @@ Transportes estándar actuales:
 - `stdio`.
 - `Streamable HTTP`.
 
-## 4.2. stdio
+---
+## 5.2. stdio
 
 `stdio` usa la entrada y salida estándar del proceso.
 
@@ -1001,7 +857,8 @@ sequenceDiagram
     Server-->>Host: Logs por stderr
 ```
 
-### Cuándo usar stdio
+---
+### 5.2.1. Cuándo usar stdio
 
 Usa `stdio` cuando:
 
@@ -1018,21 +875,24 @@ Ejemplos:
 - Integraciones con herramientas de CLI.
 - Servidores MCP para un IDE.
 
-### Ventajas
+---
+### 5.2.2. Ventajas
 
 - Fácil de implementar.
 - No necesita exponer puertos HTTP.
 - Buena opción para desarrollo local.
 - Menor superficie de red.
 
-### Limitaciones
+---
+### 5.2.3. Limitaciones
 
 - Pensado principalmente para ejecución local.
 - Normalmente sirve a un único cliente por proceso.
 - No es ideal para despliegues compartidos.
 - Logging incorrecto en `stdout` rompe el protocolo.
 
-## 4.3. Streamable HTTP
+---
+## 5.3. Streamable HTTP
 
 `Streamable HTTP` usa HTTP como transporte para mensajes MCP.
 
@@ -1053,7 +913,8 @@ flowchart LR
     MCPHTTP --> DB[(Base de datos)]
 ```
 
-### Cuándo usar Streamable HTTP
+---
+### 5.3.1. Cuándo usar Streamable HTTP
 
 Usa `Streamable HTTP` cuando:
 
@@ -1070,14 +931,16 @@ Ejemplos:
 - MCP para datos de observabilidad.
 - MCP para un catálogo de servicios o componentes.
 
-### Ventajas
+---
+### 5.3.2. Ventajas
 
 - Adecuado para servicios compartidos.
 - Permite autenticación y control centralizado.
 - Encaja mejor con despliegues cloud.
 - Puede aprovechar herramientas HTTP de observabilidad.
 
-### Riesgos y requisitos
+---
+### 5.3.3. Riesgos y requisitos
 
 - Debe implementar autenticación adecuada.
 - Debe validar cabeceras como `Origin`.
@@ -1085,7 +948,8 @@ Ejemplos:
 - Debe protegerse contra exposición accidental en red.
 - Requiere más trabajo de operación.
 
-## 4.4. Comparativa rápida
+---
+## 5.4. Comparativa rápida
 
 | Criterio | stdio | Streamable HTTP |
 |---|---|---|
@@ -1099,7 +963,8 @@ Ejemplos:
 | Riesgo principal | Romper stdout, permisos locales excesivos | Exposición de red, auth, sesiones, CORS/Origin |
 | Mejor para | IDE/local dev | Integraciones corporativas compartidas |
 
-## 4.5. No confundir Streamable HTTP con REST
+---
+## 5.5. No confundir Streamable HTTP con REST
 
 Aunque Streamable HTTP usa HTTP, no es REST clásico.
 
@@ -1120,9 +985,22 @@ La tool o resource define la capacidad funcional.
 
 ---
 
-# Bloque 5. Seguridad y operación básica
+# 6. Seguridad y operación básica
+<!-- header: "6. Seguridad y operación básica"-->
 
-## 5.1. Por qué la seguridad importa en MCP
+- [6.1. Por qué la seguridad importa en MCP](#64)
+- [6.2. Principio de mínimo privilegio](#64)
+- [6.3. Gestión de secretos](#64)
+- [6.4. Logs](#64)
+- [6.5. Límites operativos](#64)
+- [6.6. Aprobación de acciones](#64)
+- [6.7. Checklist de seguridad para una tool MCP](#64)
+- [6.8. Checklist de operación](#64)
+
+---
+
+## 6.1. Por qué la seguridad importa en MCP
+<!-- header: "6.1. Por qué la seguridad importa en MCP"-->
 
 MCP conecta IA con herramientas reales. Esto significa que un error de diseño puede permitir:
 
@@ -1136,7 +1014,7 @@ MCP conecta IA con herramientas reales. Esto significa que un error de diseño p
 
 Una integración MCP debe tratarse como una integración de software real, no como un simple prompt.
 
-## 5.2. Principio de mínimo privilegio
+## 6.2. Principio de mínimo privilegio
 
 Un servidor MCP debe tener solo los permisos necesarios.
 
@@ -1147,7 +1025,7 @@ Ejemplos:
 - Si solo necesita consultar tickets, no le des permisos de administración.
 - Si solo debe trabajar en entorno de desarrollo, no le des credenciales de producción.
 
-## 5.3. Gestión de secretos
+## 6.3. Gestión de secretos
 
 No incluyas secretos en:
 
@@ -1179,7 +1057,7 @@ Ejemplo de configuración con variable de entorno:
 
 En una configuración real, evita guardar el token en claro en un repositorio.
 
-## 5.4. Logs
+## 6.4. Logs
 
 Reglas básicas:
 
@@ -1203,7 +1081,7 @@ console.error(
 );
 ```
 
-## 5.5. Límites operativos
+## 6.5. Límites operativos
 
 Toda tool que interactúe con sistemas reales debería considerar:
 
@@ -1225,7 +1103,7 @@ inputSchema: {
 }
 ```
 
-## 5.6. Aprobación de acciones
+## 6.6. Aprobación de acciones
 
 Hay acciones que deberían requerir confirmación explícita del usuario en el cliente:
 
@@ -1247,7 +1125,7 @@ Diseño recomendado:
 4. El servidor vuelve a validar permisos.
 5. La acción queda auditada.
 
-## 5.7. Checklist de seguridad para una tool MCP
+## 6.7. Checklist de seguridad para una tool MCP
 
 Antes de publicar una tool, revisa:
 
@@ -1265,7 +1143,7 @@ Antes de publicar una tool, revisa:
 - [ ] Hay trazabilidad de uso.
 - [ ] Se han probado casos de error en MCP Inspector.
 
-## 5.8. Checklist de operación
+## 6.8. Checklist de operación
 
 Antes de integrar un MCP en un flujo de equipo:
 
@@ -1282,7 +1160,8 @@ Antes de integrar un MCP en un flujo de equipo:
 
 ---
 
-# Actividad final: diseñar un MCP para un caso real
+# 7. Actividad final: diseñar un MCP para un caso real
+<!-- header: "7. Actividad final: diseñar un MCP para un caso real"-->
 
 En grupos o individualmente, elige un caso de uso de tu proyecto actual y responde:
 
@@ -1321,7 +1200,8 @@ Logs:
 
 ---
 
-# Glosario
+# 8. Glosario
+<!-- header: "8. Glosario"-->
 
 **MCP**  
 Model Context Protocol. Protocolo para conectar aplicaciones de IA con datos, tools y sistemas externos.
@@ -1364,7 +1244,8 @@ Herramienta interactiva para probar y depurar servidores MCP.
 
 ---
 
-# Resumen para recordar
+# 9. Resumen para recordar
+<!-- header: "9. Resumen para recordar"-->
 
 - MCP estandariza cómo una aplicación de IA se conecta a contexto y herramientas externas.
 - La arquitectura se compone de host, cliente MCP y servidor MCP.
@@ -1382,7 +1263,8 @@ Herramienta interactiva para probar y depurar servidores MCP.
 
 ---
 
-# Referencias oficiales
+# 10. Referencias oficiales
+<!-- header: "10. Referencias oficiales"-->
 
 - Model Context Protocol - Specification 2025-11-25: https://modelcontextprotocol.io/specification/2025-11-25
 - MCP Architecture: https://modelcontextprotocol.io/docs/learn/architecture
@@ -1398,60 +1280,76 @@ Herramienta interactiva para probar y depurar servidores MCP.
 
 ---
 
-# Anexo A. Plantilla para diseñar una tool MCP
+# 11. Anexo A. Plantilla para diseñar una tool MCP
+<!-- header: "11. Anexo A. Plantilla para diseñar una tool MCP"-->
 
+- [11.1. Nombre de la tool](#78)
+- [11.2. Objetivo](#78)
+- [11.3. Usuario objetivo](#78)
+- [11.4. Cuándo debe invocarse](#78)
+- [11.5. Cuándo no debe invocarse](#78)
+- [11.6. Input schema](#78)
+- [11.7. Output esperado](#78)
+- [11.8. Errores recuperables](#78)
+- [11.9. Permisos](#78)
+- [11.10. Seguridad](#78)
+- [11.11. Observabilidad](#78)
+
+---
+
+<!-- header: "11.1. Plantilla de diseño de una tool"-->
 ```markdown
-## Nombre de la tool
+## 11.1. Nombre de la tool
 
 `nombre_tool`
 
-## Objetivo
+## 11.2. Objetivo
 
 ¿Qué problema resuelve?
 
-## Usuario objetivo
+## 11.3. Usuario objetivo
 
 ¿Quién la usará?
 
-## Cuándo debe invocarse
+## 11.4. Cuándo debe invocarse
 
 Describe escenarios claros de uso.
 
-## Cuándo no debe invocarse
+## 11.5. Cuándo no debe invocarse
 
 Describe límites y casos excluidos.
 
-## Input schema
+## 11.6. Input schema
 
 - Campo 1:
 - Campo 2:
 - Campo 3:
 
-## Output esperado
+## 11.7. Output esperado
 
 - Texto:
 - JSON estructurado:
 - Links a resources:
 
-## Errores recuperables
+## 11.8. Errores recuperables
 
 - Error 1:
 - Error 2:
 
-## Permisos
+## 11.9. Permisos
 
 - Lectura:
 - Escritura:
 - Sistemas externos:
 
-## Seguridad
+## 11.10. Seguridad
 
 - ¿Contiene datos sensibles?
 - ¿Requiere aprobación?
 - ¿Tiene rate limit?
 - ¿Tiene timeout?
 
-## Observabilidad
+## 11.11. Observabilidad
 
 - Logs:
 - Métricas:
@@ -1460,7 +1358,8 @@ Describe límites y casos excluidos.
 
 ---
 
-# Anexo B. Plantilla de configuración local
+# 12. Anexo B. Plantilla de configuración local
+<!-- header: "12. Anexo B. Plantilla de configuración local"-->
 
 ```json
 {
@@ -1480,7 +1379,8 @@ Describe límites y casos excluidos.
 
 ---
 
-# Anexo C. Comandos útiles
+# 13. Anexo C. Comandos útiles
+<!-- header: "13. Anexo C. Comandos útiles"-->
 
 Crear proyecto:
 
@@ -1513,7 +1413,8 @@ npx -y @modelcontextprotocol/inspector npx -y @modelcontextprotocol/server-files
 
 ---
 
-# Anexo D. Preguntas de autoevaluación
+# 14. Anexo D. Preguntas de autoevaluación
+<!-- header: "14. Anexo D. Preguntas de autoevaluación"-->
 
 1. ¿Qué diferencia hay entre host, cliente MCP y servidor MCP?
 2. ¿Cuándo usarías una tool en lugar de un resource?
@@ -1530,7 +1431,8 @@ npx -y @modelcontextprotocol/inspector npx -y @modelcontextprotocol/server-files
 
 ---
 
-# Anexo E. Soluciones orientativas de autoevaluación
+# 15. Anexo E. Soluciones orientativas de autoevaluación
+<!-- header: "15. Anexo E. Soluciones orientativas de autoevaluación"-->
 
 1. El host es la aplicación de IA; el cliente MCP es el conector dentro del host; el servidor MCP expone capacidades.
 2. Usaría una tool para ejecutar una acción o consulta con parámetros; usaría un resource para exponer contexto consultable.

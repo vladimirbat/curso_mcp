@@ -4,9 +4,12 @@
   "description": "Calculadora de Descuentos",
   "main": "app.js",
   "scripts": {
-    "start": "serve -l 3000"
+    "start": "serve -l 3000",
+    "convert:diagram": "node scripts/convert-diagram.mjs",
+    "recalc:toc": "node scripts/recalculate-toc.mjs"
   },
   "devDependencies": {
+    "@mermaid-js/mermaid-cli": "^11.12.0",
     "serve": "^14.2.4"
   }
 }
