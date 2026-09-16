@@ -9,6 +9,7 @@
     "recalc:toc": "node scripts/recalculate-toc.mjs"
   },
   "devDependencies": {
+    "@marp-team/marp-cli": "^4.5.1",
     "@mermaid-js/mermaid-cli": "^11.12.0",
     "serve": "^14.2.4"
   }

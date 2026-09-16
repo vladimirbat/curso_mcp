@@ -11,8 +11,11 @@ header {
 }
 </style>
 
-# Context Protocol (MCP)
+# Model Context Protocol (MCP)
 <!-- paginate: skip -->
+
+Formador: Vladimir Bataller
+
 ---
 <!-- _paginate: skip -->
 # Índice
