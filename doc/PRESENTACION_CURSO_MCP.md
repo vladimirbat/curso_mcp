@@ -20,15 +20,15 @@ header {
 
 - [1. Agenda](#4)
 - [2. Introducción](#5)
-- [3. Consumo de MCPs existentes](#29)
-- [4. Creación de un MCP propio con Node.js](#30)
-- [5. Transportes MCP: stdio vs Streamable HTTP](#54)
-- [6. Seguridad y operación básica](#72)
-- [7. Glosario](#88)
-- [8. Resumen para recordar](#93)
+- [3. Consumo de MCPs existentes](#30)
+- [4. Creación de un MCP propio con Node.js](#31)
+- [5. Transportes MCP: stdio vs Streamable HTTP](#55)
+- [6. Seguridad y operación básica](#73)
+- [7. Glosario](#89)
+- [8. Resumen para recordar](#94)
 
 ---
-- [9. Referencias oficiales](#95)
+- [9. Referencias oficiales](#96)
 
 ---
 
@@ -51,8 +51,8 @@ header {
 - [2.3. Problema que resuelve MCP](#8)
 - [2.4. Arquitectura básica](#12)
 - [2.5. Capas del protocolo MCP](#17)
-- [2.6. Primitivas principales](#20)
-- [2.7. Matriz de decisión rápida](#27)
+- [2.6. Primitivas principales](#21)
+- [2.7. Matriz de decisión rápida](#28)
 
 ---
 ## 2.1. Ejemplos de este curso
@@ -309,21 +309,21 @@ Para ver cómo emplear un MCP existente, se va a realizar un ejempolo con el **C
 # 4. Creación de un MCP propio con Node.js
 <!-- header: "4. Creación de un MCP propio con Node.js"-->
 
-- [4.1. Qué vamos a construir](#32)
-- [4.2. Estructura del proyecto](#34)
-- [4.3. Crear el proyecto e instalar dependencias](#35)
-- [4.4. Configurar package.json](#37)
-- [4.5. Conexión con TMDB y credenciales](#38)
-- [4.6. Crear el servidor MCP](#40)
-- [4.7. Registrar tools en el servidor](#42)
+- [4.1. Qué vamos a construir](#33)
+- [4.2. Estructura del proyecto](#35)
+- [4.3. Crear el proyecto e instalar dependencias](#36)
+- [4.4. Configurar package.json](#38)
+- [4.5. Conexión con TMDB y credenciales](#39)
+- [4.6. Crear el servidor MCP](#41)
+- [4.7. Registrar tools en el servidor](#43)
 
 ---
-- [4.8. Anatomía de una tool MCP](#43)
-- [4.9. Manejo de errores y disciplina stdio](#45)
-- [4.10. Probar con MCP Inspector](#47)
-- [4.11. Conectar el servidor en VS Code](#49)
-- [4.12. Buenas prácticas para diseñar tools](#51)
-- [4.13. Práctica de uso del servidor MCP desde otra aplicación](#52)
+- [4.8. Anatomía de una tool MCP](#44)
+- [4.9. Manejo de errores y disciplina stdio](#46)
+- [4.10. Probar con MCP Inspector](#48)
+- [4.11. Conectar el servidor en VS Code](#50)
+- [4.12. Buenas prácticas para diseñar tools](#52)
+- [4.13. Práctica de uso del servidor MCP desde otra aplicación](#53)
 
 ---
 
@@ -603,11 +603,11 @@ Si se quiere probar el MCP sin generar código, simplemente llamandolo desde un 
 # 5. Transportes MCP: stdio vs Streamable HTTP
 <!-- header: "5. Transportes MCP: stdio vs Streamable HTTP"-->
 
-- [5.1. Qué es un transporte](#55)
-- [5.2. stdio](#56)
-- [5.3. Streamable HTTP](#62)
-- [5.4. Comparativa rápida](#68)
-- [5.5. No confundir Streamable HTTP con REST](#70)
+- [5.1. Qué es un transporte](#56)
+- [5.2. stdio](#57)
+- [5.3. Streamable HTTP](#63)
+- [5.4. Comparativa rápida](#69)
+- [5.5. No confundir Streamable HTTP con REST](#71)
 
 ---
 
@@ -772,14 +772,14 @@ La tool o resource define la capacidad funcional.
 # 6. Seguridad y operación básica
 <!-- header: "6. Seguridad y operación básica"-->
 
-- [6.1. Por qué la seguridad importa en MCP](#73)
-- [6.2. Principio de mínimo privilegio](#74)
-- [6.3. Gestión de secretos](#75)
-- [6.4. Logs](#77)
-- [6.5. Límites operativos](#79)
-- [6.6. Aprobación de acciones](#81)
-- [6.7. Checklist de seguridad para una tool MCP](#84)
-- [6.8. Checklist de operación](#86)
+- [6.1. Por qué la seguridad importa en MCP](#74)
+- [6.2. Principio de mínimo privilegio](#75)
+- [6.3. Gestión de secretos](#76)
+- [6.4. Logs](#78)
+- [6.5. Límites operativos](#80)
+- [6.6. Aprobación de acciones](#82)
+- [6.7. Checklist de seguridad para una tool MCP](#85)
+- [6.8. Checklist de operación](#87)
 
 ---
 
@@ -1057,7 +1057,7 @@ Herramienta interactiva para probar y depurar servidores MCP.
 <center>(continúa)</center>
 
 ---
-- MCP TypeScript SDK: https://ts.sdk.modelcontextprotocol.io/documents/server.html
+- MCP TypeScript SDK: https://ts.sdk.modelcontextprotocol.io/server.html
 - Build an MCP server: https://modelcontextprotocol.io/docs/develop/build-server
 - Connect to local MCP servers: https://modelcontextprotocol.io/docs/develop/connect-local-servers
 - MCP Inspector: https://modelcontextprotocol.io/docs/tools/inspector
