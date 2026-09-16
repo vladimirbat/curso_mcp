@@ -37,8 +37,8 @@ header {
 
 | Bloque | Duración | Contenido |
 |---|---|---|
-| 1 | 30 min | Introducción y ejemplo de uso de un MCP|
-| 3 | 90 min | Creación de un MCP propio con Node.js |
+| 1 | 45 min | Introducción y ejemplo de uso de un MCP|
+| 3 | 75 min | Creación de un MCP propio con Node.js |
 
 ---
 
@@ -181,6 +181,8 @@ Define los mensajes y operaciones basados en JSON-RPC 2.0. Aquí aparecen concep
 - Responses.
 - Notifications.
 - Tools.
+
+---
 - Resources.
 - Prompts.
 
